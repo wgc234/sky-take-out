@@ -1,4 +1,4 @@
-package com.wgc.skyserver;
+package com.wgc;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

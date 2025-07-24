@@ -1,4 +1,4 @@
-package com.wgc.skyserver.mapper;
+package com.wgc.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.wgc.entity.Employee;

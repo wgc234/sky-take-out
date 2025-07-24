@@ -9,3 +9,24 @@ spring:
     username: ${spring.datasource.username}
     password: ${spring.datasource.password}
     driver-class-name: ${spring.datasource.driver-class-name}
+
+
+
+
+logging:
+  level:
+    com:
+      wgc:
+        mapper: debug
+        service: info
+        controller: info
+
+sky:
+  jwt:
+    admin-secret-key: wgc
+
+    admin-ttl: 72000000
+
+    admin-token-name: token
+
+
