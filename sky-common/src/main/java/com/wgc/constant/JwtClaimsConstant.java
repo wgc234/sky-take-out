@@ -1,4 +1,4 @@
-package com.wgc.context;
+package com.wgc.constant;
 
 public class JwtClaimsConstant {
 

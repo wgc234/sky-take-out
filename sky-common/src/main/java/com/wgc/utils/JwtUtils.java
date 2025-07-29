@@ -1,8 +1,6 @@
 package com.wgc.utils;
 
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -21,6 +19,15 @@ public class JwtUtils {
                 .setExpiration(exp)
                 .signWith(signatureAlgorithm,secretKey.getBytes(StandardCharsets.UTF_8));
         return builder.compact();
+    }
+
+
+    public static Claims parseJWT(String secretKey,String token){
+        Claims claims = Jwts.parser()
+                .setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8))
+                .parseClaimsJws(token).getBody();
+
+        return  claims;
     }
 }
 

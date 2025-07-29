@@ -1,6 +1,7 @@
 package com.wgc.controller.admin;
 
-import com.wgc.context.JwtClaimsConstant;
+import com.wgc.constant.JwtClaimsConstant;
+import com.wgc.dto.EmployeeAddDTO;
 import com.wgc.dto.EmployeeLoginDTO;
 import com.wgc.entity.Employee;
 import com.wgc.properties.JwtProperties;
@@ -46,6 +47,14 @@ public class EmployeeController {
                 .build();
 
         return Result.success(employeeLoginVO);
+    }
+
+    @PostMapping("/employee")
+    public Result save(@RequestBody EmployeeAddDTO employeeAddDTO){
+
+        employeeService.saveEmp(employeeAddDTO);
+
+        return Result.success();
     }
 
 }

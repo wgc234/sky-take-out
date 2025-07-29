@@ -1,19 +1,23 @@
 package com.wgc.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.wgc.context.MessageContext;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.wgc.constant.MessageConstant;
+import com.wgc.dto.EmployeeAddDTO;
 import com.wgc.dto.EmployeeLoginDTO;
 import com.wgc.entity.Employee;
 import com.wgc.enums.StatusEnum;
+import com.wgc.exception.FieldEmptyException;
 import com.wgc.exception.LoginFailedException;
 import com.wgc.mapper.EmployeeMapper;
 import com.wgc.service.EmployeeService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 @Service
-public class EmployeeServiceImpl implements EmployeeService {
+public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> implements EmployeeService {
 
     @Autowired
     private EmployeeMapper employeeMapper;
@@ -25,16 +29,107 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeMapper.selectOne(lambdaQueryWrapper);
 
         if(employee==null){
-            throw new LoginFailedException(MessageContext.USERNAME_NOT_EXIST);
+            throw new LoginFailedException(MessageConstant.USERNAME_NOT_EXIST);
         }
         String password = DigestUtils.md5DigestAsHex(employeeLoginDTO.getPassword().getBytes());
         if(!employee.getPassword().equals(password)){
-            throw new LoginFailedException(MessageContext.PASSWORD_ERROR);
+            throw new LoginFailedException(MessageConstant.PASSWORD_ERROR);
         }
         if(employee.getStatus().equals(StatusEnum.DISABLE.getCode())){
-            throw new LoginFailedException(MessageContext.ACCOUNT_LOCKED);
+            throw new LoginFailedException(MessageConstant.ACCOUNT_LOCKED);
         }
 
         return employee;
+    }
+
+    @Override
+    public void saveEmp(EmployeeAddDTO employeeAddDTO) {
+        //判断字段是否为空
+        if (employeeAddDTO.getUsername() == null || employeeAddDTO.getUsername().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.USERNAME_CANNOT_BE_EMPTY);
+        }
+        if (employeeAddDTO.getName() == null || employeeAddDTO.getName().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.NAME_CANNOT_BE_EMPTY);
+        }
+        if (employeeAddDTO.getPhone() == null || employeeAddDTO.getPhone().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.PHONE_CANNOT_BE_EMPTY);
+        }
+        if (employeeAddDTO.getSex() == null || employeeAddDTO.getSex().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.SEX_CANNOT_BE_EMPTY);
+        }
+        if (employeeAddDTO.getIdNumber() == null || employeeAddDTO.getIdNumber().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.ID_NUMBER_CANNOT_BE_EMPTY);
+        }
+        String username = employeeAddDTO.getUsername().trim();
+        if (username.length() < 3 || username.length() > 20) {
+            throw new FieldEmptyException(MessageConstant.USERNAME_FORMAT_ERROR);
+        }
+        if (!username.matches("^[a-zA-Z0-9]+$")) {
+            throw new FieldEmptyException(MessageConstant.USERNAME_FORMAT_ERROR);
+        }
+        LambdaQueryWrapper<Employee> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Employee::getUsername, username);
+        Employee existEmployee = employeeMapper.selectOne(lambdaQueryWrapper);
+        if (existEmployee != null) {
+            throw new FieldEmptyException(MessageConstant.USERNAME_DUPLICATE);
+        }
+
+        // 员工姓名校验
+        String name = employeeAddDTO.getName().trim();
+        if (name.isEmpty()|| name.length() > 12) {
+            throw new FieldEmptyException(MessageConstant.NAME_LENGTH_ERROR);
+        }
+        if (!name.matches("^[\\u4e00-\\u9fa5a-zA-Z]+$")) {
+            throw new FieldEmptyException(MessageConstant.NAME_FORMAT_ERROR);
+        }
+
+        // 手机号校验
+        String phone = employeeAddDTO.getPhone().trim();
+        if (!phone.matches("^1[3-9]\\d{9}$")) {
+            throw new FieldEmptyException(MessageConstant.PHONE_FORMAT_ERROR);
+        }
+
+        // 身份证号校验
+        String idNumber = employeeAddDTO.getIdNumber().trim();
+        if (idNumber.length() != 18 || !isValidIdNumber(idNumber)) {
+            throw new FieldEmptyException(MessageConstant.ID_NUMBER_FORMAT_ERROR);
+        }
+
+        //新增员工
+        Employee employee = new Employee();
+        BeanUtils.copyProperties(employeeAddDTO,employee);
+        employeeMapper.insert(employee);
+    }
+
+    private boolean isValidIdNumber(String idNumber) {
+        // 基本格式检查
+        if (idNumber == null || idNumber.length() != 18) {
+            return false;
+        }
+
+        // 检查前17位是否都是数字
+        if (!idNumber.substring(0, 17).matches("\\d{17}")) {
+            return false;
+        }
+
+        // 检查最后一位是否是数字或X
+        char lastChar = idNumber.charAt(17);
+        if (!(Character.isDigit(lastChar) || lastChar == 'X' || lastChar == 'x')) {
+            return false;
+        }
+
+        // 校验码验证
+        int[] weights = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
+        char[] checks = {'1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'};
+
+        int sum = 0;
+        for (int i = 0; i < 17; i++) {
+            sum += (idNumber.charAt(i) - '0') * weights[i];
+        }
+
+        int remainder = sum % 11;
+        char checkChar = checks[remainder];
+
+        return Character.toUpperCase(lastChar) == checkChar;
     }
 }
