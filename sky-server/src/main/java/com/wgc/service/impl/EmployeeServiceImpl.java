@@ -1,20 +1,29 @@
 package com.wgc.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wgc.constant.MessageConstant;
+import com.wgc.constant.PasswordConstant;
+import com.wgc.constant.StatusConstant;
 import com.wgc.dto.EmployeeAddDTO;
 import com.wgc.dto.EmployeeLoginDTO;
+import com.wgc.dto.EmployeeUpdateDTO;
+import com.wgc.dto.EmployeeUpdatePasswordDTO;
 import com.wgc.entity.Employee;
 import com.wgc.enums.StatusEnum;
 import com.wgc.exception.FieldEmptyException;
 import com.wgc.exception.LoginFailedException;
 import com.wgc.mapper.EmployeeMapper;
+import com.wgc.result.PageResult;
 import com.wgc.service.EmployeeService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+import org.springframework.util.StringUtils;
+
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> implements EmployeeService {
@@ -98,7 +107,80 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
         //新增员工
         Employee employee = new Employee();
         BeanUtils.copyProperties(employeeAddDTO,employee);
+        employee.setStatus(StatusConstant.ENABLE);
+        employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
         employeeMapper.insert(employee);
+    }
+
+    @Override
+    public void updateStatusById(Long employeeId, Integer status) {
+        //根据id修改状态
+        lambdaUpdate().eq(Employee::getId,employeeId)
+                .set(Employee::getStatus,status)
+                .update();
+    }
+
+    @Override
+    public void updatePassword(EmployeeUpdatePasswordDTO employeeUpdatePasswordDTO) {
+        //根据员工id查询员工信息
+        Employee employee = employeeMapper.selectById(employeeUpdatePasswordDTO.getEmpId());
+        if(employee==null){
+            throw new LoginFailedException(MessageConstant.EMPLOYEE_NOT_FOUND);
+        }
+        //校验旧密码是否正确
+        if (!employee.getPassword().equals(DigestUtils.md5DigestAsHex(employeeUpdatePasswordDTO.getOldPassword().getBytes()))) {
+            throw new LoginFailedException(MessageConstant.PASSWORD_ERROR);
+        }
+        //更新员工密码
+        employee.setPassword(DigestUtils.md5DigestAsHex(employeeUpdatePasswordDTO.getNewPassword().getBytes()));
+        employeeMapper.updateById(employee);
+    }
+
+    @Override
+    public void updateEmp(EmployeeUpdateDTO employeeUpdateDTO) {
+        if(employeeUpdateDTO==null){
+            throw new FieldEmptyException(MessageConstant.ID_CANNOT_BE_EMPTY);
+        }
+        //校验是否为空
+        if (employeeUpdateDTO.getId() == null) {
+            throw new FieldEmptyException(MessageConstant.ID_CANNOT_BE_EMPTY);
+        }
+        if (employeeUpdateDTO.getName() == null || employeeUpdateDTO.getName().trim().isEmpty()){
+            throw new FieldEmptyException(MessageConstant.NAME_CANNOT_BE_EMPTY);
+        }
+        if (employeeUpdateDTO.getPhone() == null || employeeUpdateDTO.getPhone().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.PHONE_CANNOT_BE_EMPTY);
+        }
+        if (employeeUpdateDTO.getSex() == null || employeeUpdateDTO.getSex().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.SEX_CANNOT_BE_EMPTY);
+        }
+        if (employeeUpdateDTO.getIdNumber() == null || employeeUpdateDTO.getIdNumber().trim().isEmpty()) {
+            throw new FieldEmptyException(MessageConstant.ID_NUMBER_CANNOT_BE_EMPTY);
+        }
+        //查询该用户是否存在
+        Employee employee = employeeMapper.selectById(employeeUpdateDTO.getId());
+        if (employee == null) {
+            throw new FieldEmptyException(MessageConstant.EMPLOYEE_NOT_FOUND);
+        }
+        Employee newEmployee = new Employee();
+        BeanUtils.copyProperties(employeeUpdateDTO,newEmployee);
+        employeeMapper.updateById(newEmployee);
+    }
+
+    @Override
+    public PageResult<Employee> pageQuery(Integer page, Integer pageSize, String name) {
+        //校验页码和页数
+        if (page <= 0 || pageSize <= 0) {
+            throw new FieldEmptyException(MessageConstant.PAGE_AND_PAGE_SIZE_CANNOT_BE_EMPTY);
+        }
+        Page<Employee> pageInfo = new Page<>(page, pageSize);
+        //构建根据姓名查询的查询器
+        LambdaQueryWrapper<Employee> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(StringUtils.hasText(name),Employee::getName,name);
+
+        //调用分页查询方法
+        employeeMapper.selectPage(pageInfo, lambdaQueryWrapper);
+        return new PageResult<Employee>(pageInfo.getTotal(),pageInfo.getRecords());
     }
 
     private boolean isValidIdNumber(String idNumber) {

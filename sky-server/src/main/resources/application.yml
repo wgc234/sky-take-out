@@ -25,7 +25,7 @@ sky:
   jwt:
     admin-secret-key: wgc
 
-    admin-ttl: 72000000
+    admin-ttl: 720000000
 
     admin-token-name: token
 

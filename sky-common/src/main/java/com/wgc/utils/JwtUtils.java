@@ -1,5 +1,7 @@
 package com.wgc.utils;
 
+import com.wgc.constant.MessageConstant;
+import com.wgc.exception.LoginFailedException;
 import io.jsonwebtoken.*;
 
 import java.nio.charset.StandardCharsets;
@@ -23,11 +25,16 @@ public class JwtUtils {
 
 
     public static Claims parseJWT(String secretKey,String token){
-        Claims claims = Jwts.parser()
-                .setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8))
-                .parseClaimsJws(token).getBody();
-
-        return  claims;
+        try {
+            return Jwts.parser()
+                    .setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8))
+                    .parseClaimsJws(token).getBody();
+        } catch (JwtException | IllegalArgumentException e) {
+            // JwtException 捕获了所有 jjwt 相关的解析错误
+            // IllegalArgumentException 捕获了 token 为空或空白等问题
+            // 可以在这里记录日志 log.error("Token 解析失败", e);
+            throw new LoginFailedException(MessageConstant.TOKEN_ERROR);
+        }
     }
 }
 

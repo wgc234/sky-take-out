@@ -28,8 +28,14 @@
         <dependencies>
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <artifactId>mybatis-plus-bom</artifactId>
                 <version>${mybatisPlus}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -48,5 +54,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
 </project>

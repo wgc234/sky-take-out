@@ -80,5 +80,25 @@ public class MessageConstant {
      * 身份证号码不正确
      */
     public static final String ID_NUMBER_FORMAT_ERROR = "身份证号码不正确";
+
+    /**
+     * token为空或不正确
+     */
+    public static final String TOKEN_ERROR = "token为空或不正确";
+
+    /**
+     * 员工不存在
+     */
+    public static final String EMPLOYEE_NOT_FOUND = "员工不存在";
+
+    /**
+     * id为空
+     */
+    public static final String ID_CANNOT_BE_EMPTY = "id为空";
+
+    /**
+     * 页码和页数不能为空
+     */
+    public static final String PAGE_AND_PAGE_SIZE_CANNOT_BE_EMPTY = "页码和页数不能为空";
 }
 

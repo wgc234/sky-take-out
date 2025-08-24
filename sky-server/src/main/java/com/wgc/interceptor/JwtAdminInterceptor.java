@@ -1,7 +1,9 @@
 package com.wgc.interceptor;
 
 import com.wgc.constant.JwtClaimsConstant;
+import com.wgc.constant.MessageConstant;
 import com.wgc.context.BaseContext;
+import com.wgc.exception.FieldEmptyException;
 import com.wgc.properties.JwtProperties;
 import com.wgc.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
@@ -33,6 +35,13 @@ public class JwtAdminInterceptor implements HandlerInterceptor {
 
         //从请求头里面获取token
         String token = request.getHeader(jwtProperties.getAdminTokenName());
+
+        // 预先验证 token 格式
+        if (token == null || token.trim().isEmpty() || token.split("\\.").length != 3) {
+            log.warn("无效的 JWT token 格式");
+            response.setStatus(401);
+            return false;
+        }
 
         //校验令牌
         try {
